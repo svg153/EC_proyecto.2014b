@@ -1,7 +1,7 @@
 EC_proyecto.2014b
 =================
 
-Pruebas del proyecto de Estructura de Computadores (AC) de la Escuela Técnica Superior de Ingenieros Informáticos (ETISIINF, antigua Facultad de Informática, FI) de la Universidad Politécnica de Madrid (UPM).
+Pruebas del proyecto de Estructura de Computadores (EC) de la Escuela Técnica Superior de Ingenieros Informáticos (ETISIINF, antigua Facultad de Informática, FI) de la Universidad Politécnica de Madrid (UPM).
 
 > **PRECAUCIÓN:** Puede ser que el proyecto haya cambiado respecto al que era cuando se creó este fichero.
 
@@ -12,7 +12,7 @@ Pruebas del proyecto de Estructura de Computadores (AC) de la Escuela Técnica S
 | Año         | 2013-2014
 | Materia     | Estructura de Computadores
 | Semestre    | 2 Semestre. Mañana
-| Proyecto    | Proyecto E/S Ensamblador
+| Proyecto    | Proyecto Ensamblador
 | Archivo     | codigo_pruebas.ens
 
 Información del proyecto:
