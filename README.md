@@ -19,7 +19,9 @@ Información del proyecto:
 *	Toda la información sobre este proyecto se encuentra en la [página del proyecto de la asignatura][1]
 
 ## Autores
-*	Emilian Ghergheluca
+* Jose Carlos Garde
+*	Emilian Ghergheluca 
+* Alicia Chaparro
 * Sergio Valverde, [@svg153][3]
 
 
