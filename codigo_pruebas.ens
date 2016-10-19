@@ -1,0 +1,769 @@
+; -----------------------------------------------------------------------------
+; Titulación:	Grado en Informática. Plan 09.
+; Año:			  2013-2014.
+; Materia:		Estructura de Computadores.
+; Semestre:		2º semestre. Mañana
+; Ejercício:	Proyecto Ensamblador.
+; Archivo:		codigo_prueba.ens
+; -----------------------------------------------------------------------------
+; Autores:
+;	Nombre Apellido , username
+;	Jose Carlos Garde ,
+;	Emilian Ghergheluca ,
+;	Alicia Chaparro ,
+;	Sergio Valverde , @svg153
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; Información:
+;	Toda la información sobre este proyecto se encuentra aquí:
+;	http://www.datsi.fi.upm.es/docencia/Estructura_09/Proyecto_Ensamblador/
+; -----------------------------------------------------------------------------
+
+; -----------------------------------------------------------------------------
+; --> codigo_prueba.ens
+; -----------------------------------------------------------------------------
+
+
+
+
+;
+; --------------------------------------------------------------------> Macros
+;
+
+LEA:	MACRO	(reg, ETIQ)
+		or		reg, r0,  low(ETIQ)
+		or.u	reg, reg, high(ETIQ)
+		ENDMACRO
+
+PUSH:	MACRO	(reg)
+		subu	r30, r30, 4
+		st		reg, r30, r0
+		ENDMACRO
+
+POP:	MACRO	(reg)
+		ld		reg, r30, r0
+		addu	r30, r30, 4
+		ENDMACRO
+
+LD_INM: MACRO(ra,eti)
+	  or      ra,r0,low(eti)
+	  or.u    ra,ra,high(eti)
+		ENDMACRO
+; Carga el valor de una etiqueta.
+
+RET:	MACRO	(ra)
+		POP   	(ra)
+		jmp   	(ra)
+		ENDMACRO
+; Hace el retorno de un registro
+
+DBNZ:	MACRO	(reg, ETIQ)
+		sub		reg, reg, 1
+		cmp		r4, reg, r0
+		bb0		eq, r4, ETIQ
+		ENDMACRO
+
+;
+; Macros <---------------------------------------------------------------------
+;
+
+
+
+;
+; --------------------------------------------------------> Datos para pruebas
+;
+
+; Organizamos los datos y empezamos a guardarlos a partir de la
+; dierección de memoria "1000".
+org    1000						; @TODO: Comentar
+
+; Matrices para las pruebas.
+
+; 	Imagen:
+;		Es la matriz que contiene tanto la imagen de entrada, a la
+;		que se ha de aplicar el filtro, como la imagen de salida, una
+;		vez filtrada. Se pasa por dirección, por lo que ocupa 4 bytes.
+;		Es un parámetro de entrada y salida que tiene tres campos:
+;			- El número de filas, de tipo entero (M).
+;			- El número de columnas, de tipo entero (N).
+;			- Los elementos almacenados por filas, cada uno de tipo byte
+;		  	  sin signo (MxNbytes, MxN/4 palabras).
+;		Forma ( data  M (filas), N (columnas), m·n elementos (0x15141312) )
+;
+Imagen:
+				data  	3, 7
+				data	0x15141312, 0x11100908
+				data	0x07060504, 0x03020100
+				data	0x16171819, 0x20
+;				Matriz Imagen: (hexadecimal y Little Endian)
+;					3 x 7
+;					12 13 14 15 08 09 10
+;					11 04 05 06 07 00 01
+;					02 03 19 18 17 16 20
+
+
+; Otras Imagenes
+
+IM1 :
+				data 	4, 8
+				data 	0x00000000, 0x00000000
+				data 	0x00000001, 0x00000000
+				data 	0x00000000, 0x00000000
+				data 	0x00000000, 0x00000000
+;				Matriz IM1: (hexadecimal y Little Endien)
+;					4 x 8
+;					00 00 00 00 00 00 00 00
+;					01 00 00 00 00 00 00 00
+;					00 00 00 00 00 00 00 00
+;					00 00 00 00 00 00 00 00
+
+
+IM2 :
+				data 	4, 8
+				data 	0x00000000, 0x00000000
+				data 	0x00000000, 0x00000000
+				data 	0x00000000, 0x00000000
+				data 	0x00000000, 0x00000000
+;				Matriz IM2: (hexadecimal y Little Endian)
+;					4 x 8
+;					00 00 00 00 00 00 00 00
+;					00 00 00 00 00 00 00 00
+;					00 00 00 00 00 00 00 00
+;					00 00 00 00 00 00 00 00
+
+
+IM3:
+				data 	4, 8
+				data 	0xFF00FF00, 0x00FF00FF
+				data 	0xFF00FF00, 0x00FF00FF
+				data	0xFF00FF00, 0x00FF00FF
+				data 	0xFF00FF00, 0x00FF00FF
+;				Matriz IM3: (hexadecimal y Little Endian)
+;					4 x 8
+;					00 FF 00 FF FF 00 FF 00
+;					00 FF 00 FF FF 00 FF 00
+;					00 FF 00 FF FF 00 FF 00
+;					00 FF 00 FF FF 00 FF 00
+
+
+IM4: 			data 	4, 8
+				data	0x44444444, 0x44444444
+				data 	0x33340044, 0x44444444
+				data 	0x44884444, 0x44444444
+				data 	0x53545544, 0x44444444
+;				Matriz IM4: (hexadecimal y Little Endian)
+;					4 x 8
+;					44 44 44 44 44 44 44 44
+;					44 00 34 33 44 44 44 44
+;					44 44 88 44 44 44 44 44
+;					44 55 54 53 44 44 44 44
+
+
+IM5:
+				data  	4, 8
+				data	0x01020304, 0x05060708
+				data	0x090A0B0C, 0x0D0E0F10
+				data	0x11121314, 0x15161718
+				data	0x191A1B1C, 0x1D1E1F20
+;				Matriz IM5: (hexadecimal y little endian)
+;					4 x 8
+;					04 03 02 01 08 07 06 05
+;					0C 0B 0A 09 10 0F 0E 0D
+;					14 13 12 11 18 17 16 15
+;					1C 1B 1A 19 20 1F 1E 1D
+
+
+IM6:
+				data  	4, 8
+				data	0x15141312, 0x11100908
+				data	0x07060504, 0x03020100
+				data	0x15141312, 0x11100908
+				data	0x07060504, 0x03020100
+;				Matriz Imagen:
+;					4 x 8
+;					12 13 14 15 08 09 10 11
+;					04 05 06 07 00 01 02 03
+;					15 14 13 12 08 09 10 11
+;					07 06 05 04 00 01 02 03
+
+
+IM7:
+				data  	4, 8
+				data	0x11111111, 0x11111111
+				data	0x11111111, 0x11111111
+				data	0x11111111, 0x11111111
+				data	0x11111111, 0x11111111
+;				Matriz Imagen:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+
+
+IM8:
+				data  	4, 8
+				data	0x11111111, 0x11111111
+				data	0x00000011, 0x11000000
+				data	0x00000011, 0x11000000
+				data	0x11111111, 0x11111111
+;				Matriz Imagen:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 00 00 00 00 00 00 11
+;					11 00 00 00 00 00 00 11
+;					11 11 11 11 11 11 11 11
+
+
+IM9:
+				data  	4, 8
+				data	0x11111111, 0x11111111
+				data	0x22222211, 0x11222222
+				data	0x22222211, 0x11222222
+				data	0x11111111, 0x11111111
+;				Matriz Imagen:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 22 22 22 22 22 22 11
+;					11 22 22 22 22 22 22 11
+;					11 11 11 11 11 11 11 11
+
+
+IMF:
+				res	40
+
+; 	MFiltro:
+;		Es la matriz cuadrada que define los elementos del filtro
+;		que se ha de pasar a la imagen proporcionada a través del
+;		primer parámetro. Es un parámetro de entrada que se pasa
+;		por dirección, por lo que ocupa 4 bytes. Define la posición
+;		de memoria en que se encuentra la especificación del filtro,
+;		formada por dos campos:
+;			- La constante entera K que divide a cada componente del
+;			  filtro
+;			- Los nueve elementos del filtro almacenados por filas, cada
+;			  uno de tipo entero (en total 9 palabras).
+;		Forma ( data  K (fracción), 9 elementos (Ejemp: 1,-5,1,5,1,-4,1,1,3) )
+;
+
+MFiltro:
+				data	1
+				data	0, 	0,	0
+				data	0, 	0,	0
+				data	0, 	0,	0
+;				Matriz MFiltro:
+;					1
+;					0 0	0
+;					0	0	0
+;					0 0	0
+
+
+MF2:
+				data	1
+				data	1, 	1,	1
+				data	1, 	1, 	1
+				data	1, 	1, 	1
+;				Matriz MF2:
+;					1
+;					1 1	1
+;					1 1	1
+;					1 1	1
+
+
+MF3:
+				data	1
+				data	1, 	1,	1
+				data	0, 	0,	0
+				data	0, 	0,	0
+;				Matriz MF3:
+;					3
+;					1 1	1
+;					0 0	0
+;					0 0	0
+MF4:
+				data	1
+				data	0, 	0,	0
+				data	0, 	1,	0
+				data	0, 	0,	0
+;				Matriz MF4:
+;					1
+;					0 0	0
+;					0 1	0
+;					0 0	0
+MF5:
+				data	1
+				data	0, 	0,	0
+				data	0, 	2,	0
+				data	0, 	0,	0
+;				Matriz MF5:
+;					1
+;					0 0	0
+;					0 2	0
+;					0 0	0
+MF6:
+				data	2
+				data	0, 	0,	0
+				data	0, 	1,	0
+				data	0, 	0,	0
+;				Matriz MF6:
+;					2
+;					0 0	0
+;					0 1	0
+;					0 0	0
+MF111:
+				data	5
+				data	1, 	-5, 1
+				data	5, 	1, 	-4
+				data	1, 	1, 	3
+;				Matriz MF111:
+;					5
+;					1  -5 1
+;					5  1  -4
+;					1  1  3
+
+
+
+;
+; Datos para pruebas <---------------------------------------------------------
+;
+
+
+
+;
+; -------------------------------------------------------> Programas llamantes
+; @TODO:
+
+; Empezamos a guardamos los programas llamantes a partir de la
+; dierección de memoria "2000"
+org    2000
+
+; Programa Principal 1 (prueba de subrutina "COMPARA")
+; 		El resultado quedará finalmente en r29.
+;
+PPALC1:	; IM1 && IM2 --> r29==1
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20,IM1)		; Guardamos la Imagen1 en el r20
+				LEA		(r21,IM2)		; Guardamos la Imagen2 en el r21
+				PUSH	(r21)			; Guardamos Imagen2 en la pila
+				PUSH	(r20)			; Guardamos Imagen1 en la pila
+				bsr		COMPARA			; Saltamos a subrutina COMPARA
+				stop					; stop paramos la ejecucion del
+										; programa
+
+PPALC2:	; IM1 && IM1 --> r29==0
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20,IM1)		; Guardamos la Imagen1 en el r20
+				LEA		(r21,IM1)		; Guardamos la Imagen1 en el r21
+										; Metemos la misma IM1 --> r29==0
+				PUSH	(r21)			; Guardamos Imagen1 en la pila
+				PUSH	(r20)			; Guardamos Imagen1 en la pila
+				bsr		COMPARA			; Saltamos a subrutina COMPARA
+				stop					; stop paramos la ejecucion del
+										; programa
+
+PPALC3:	; IM1 && IM3 --> r29==17
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20,IM1)		; Guardamos la Imagen1 en el r20
+				LEA		(r21,IM3)		; Guardamos la Imagen3 en el r21
+				PUSH	(r21)			; Guardamos Imagen3 en la pila
+				PUSH	(r20)			; Guardamos Imagen1 en la pila
+				bsr		COMPARA			; Saltamos a subrutina COMPARA
+				stop					; stop paramos la ejecucion del
+										; programa
+
+PPALC4:	; IM2 && IM3 --> r29==16
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20,IM2)		; Guardamos la Imagen2 en el r20
+				LEA		(r21,IM3)		; Guardamos la Imagen3 en el r21
+				PUSH	(r21)			; Guardamos Imagen3 en la pila
+				PUSH	(r20)			; Guardamos Imagen2 en la pila
+				bsr		COMPARA			; Saltamos a subrutina COMPARA
+				stop					; stop paramos la ejecucion del
+										; programa
+
+; Programa Principal 2 (prueba de subrutina "FILTRAPIXEL")
+; 		El resultado quedará finalmente en r29.
+;
+PPALFP1:	; Imagen && MFiltro --> r29=A2 (0x000000A2) (162)
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM5)		; Guardamos la Imagen en el r20
+				LEA		(r21, MF2)		; Guardamos la MFiltro en el r21
+				LEA		(r22, 2)		; Guardamos la i en el r22
+				LEA		(r23, 2)		; Guardamos la j en el r23
+				PUSH	(r23)			; Guardamos j en la pila
+				PUSH	(r22)			; Guardamos i en la pila
+				PUSH	(r21)			; Guardamos MFiltro en la pila
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRAPIXEL		; Saltamos a subrutina FILTRAPIXEL
+				stop					; stop paramos la ejecucion del
+										; programa
+PPALFP2:	; Imagen && MFiltro -->
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, Imagen)	; Guardamos la Imagen en el r20
+				LEA		(r21, MFiltro)	; Guardamos la MFiltro en el r21
+				LEA		(r22, 1)		; Guardamos la i en el r22
+				LEA		(r23, 1)		; Guardamos la j en el r23
+				PUSH	(r23)			; Guardamos j en la pila
+				PUSH	(r22)			; Guardamos i en la pila
+				PUSH	(r21)			; Guardamos MFiltro en la pila
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRAPIXEL		; Saltamos a subrutina FILTRAPIXEL
+				stop					; stop paramos la ejecucion del
+										; programa
+PPALFP3:	; Imagen && MFiltro -->
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, Imagen)	; Guardamos la Imagen en el r20
+				LEA		(r21, MF2)		; Guardamos la MFiltro en el r21
+				LEA		(r22, 1)		; Guardamos la i en el r22
+				LEA		(r23, 1)		; Guardamos la j en el r23
+				PUSH	(r23)			; Guardamos j en la pila
+				PUSH	(r22)			; Guardamos i en la pila
+				PUSH	(r21)			; Guardamos MFiltro en la pila
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRAPIXEL		; Saltamos a subrutina FILTRAPIXEL
+				stop					; stop paramos la ejecucion del
+										; programa
+
+PPALFP4:	; Imagen && MFiltro -->
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM4)		; Guardamos la Imagen en el r20
+				LEA		(r21, MF3)		; Guardamos la MFiltro en el r21
+				LEA		(r22, 2)		; Guardamos la i en el r22
+				LEA		(r23, 2)		; Guardamos la j en el r23
+				PUSH	(r23)			; Guardamos j en la pila
+				PUSH	(r22)			; Guardamos i en la pila
+				PUSH	(r21)			; Guardamos MFiltro en la pila
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRAPIXEL		; Saltamos a subrutina FILTRAPIXEL
+				stop					; stop paramos la ejecucion del
+										; programa
+
+; Programa Principal 3 (prueba de subrutina "FILTRO")
+; 		El resultado quedará finalmente en r29.
+;
+PPALF1:
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM5)		; Guardamos la Imagen en el r20
+				LEA		(r21, IMF)		; Guardamos IMF en el r22
+				LEA		(r22, MF2)		; Guardamos la MFiltro en el r21
+				PUSH	(r22)			; Guardamos MFiltro en la pila
+				PUSH	(r21)			; Guardamos IMF en el r22
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRO			; Saltamos a subrutina FILTRO
+				stop					; stop paramos la ejecucion del
+										; programa
+;				Matriz IMF:
+;					4 x 8
+;
+;
+;
+;
+PPALF2:
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM7)		; Guardamos la Imagen en el r20
+				LEA		(r21, IMF)		; Guardamos IMF en el r22
+				LEA		(r22, MF4)		; Guardamos la MFiltro en el r21
+				PUSH	(r22)			; Guardamos MFiltro en la pila
+				PUSH	(r21)			; Guardamos IMF en el r22
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRO			; Saltamos a subrutina FILTRO
+				addu	r30, r30, 12	; Dejamos r30 como estaba
+				stop					; stop paramos la ejecucion del
+										; programa
+;				Matriz IMF:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 00 00 00 00 00 00 11
+;					11 00 00 00 00 00 00 11
+;					11 11 11 11 11 11 11 11
+PPALF3:
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM7)		; Guardamos la Imagen en el r20
+				LEA		(r21, 8000)		; Guardamos IMF en el r22
+				LEA		(r22, MF5)		; Guardamos la MFiltro en el r21
+				PUSH	(r22)			; Guardamos MFiltro en la pila
+				PUSH	(r21)			; Guardamos IMF en el r22
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRO			; Saltamos a subrutina FILTRO
+				addu	r30, r30, 12	; Dejamos r30 como estaba
+				stop					; stop paramos la ejecucion del
+										; programa
+;				Matriz IMF:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 22 22 22 22 22 22 11
+;					11 22 22 22 22 22 22 11
+;					11 11 11 11 11 11 11 11
+PPALF4:
+				LEA		(r30, 60000)	; Inicializacion del puntero de pila
+				LEA		(r20, IM9)		; Guardamos la Imagen en el r20
+				LEA		(r21, IMF)		; Guardamos IMF en el r22
+				LEA		(r22, MF6)		; Guardamos la MFiltro en el r21
+				PUSH	(r22)			; Guardamos MFiltro en la pila
+				PUSH	(r21)			; Guardamos IMF en el r22
+				PUSH	(r20)			; Guardamos Imagen en la pila
+				bsr		FILTRO			; Saltamos a subrutina FILTRO
+				addu	r30, r30, 12	; Dejamos r30 como estaba
+				stop					; stop paramos la ejecucion del
+										; programa
+;				Matriz IMF:
+;					4 x 8
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+;					11 11 11 11 11 11 11 11
+
+
+;
+; Programas llamantes <--------------------------------------------------------
+;
+
+
+
+;
+; ------------------------------------------------------> Pruebas de compañeros
+;
+
+
+	;Programas Principales para FILTRAPIXEL:
+
+	; r12 => numero fila
+	; r13 => numero columna
+
+;r29=11
+PPALfp1:LEA	(r30,50000)
+	LEA	(r2,IM1fp1)
+	or	r12,r0,1
+	or	r13,r0,1
+	LEA	(r3,MFfp1)
+	PUSH	(r3)
+	PUSH	(r13)
+	PUSH	(r12)
+	PUSH	(r2)
+	bsr	FILTRAPIXEL
+	addu	r30,r30,16
+	stop
+
+;org	160
+;Llama a FILTRAPIXEL, pasandole Imagen de elemento unico y filtro unitario:
+IM1fp1:	data	4,8
+		data	0x00000000,0x00000000,0x00001100,0x00000000
+		data	0x00000000,0x00000000,0x00000000,0x00000000
+MFfp1:	data	1,0,0,0,0,255,0,0,0,0
+		; 4 * 8						x	 MF
+	; | 00 00 00 00 00 00 00 00 |		k = 1
+	; | 00 11 00 00 00 00 00 00 |		| 0 0 0 |
+	; | 00 00 00 00 00 00 00 00 |		| 0 1 0 |
+	; | 00 00 00 00 00 00 00 00 |		| 0 0 0 |
+	;
+	; 		| 00 00 00 |		| 0 0 0 |
+	; =>	| 00 11 00 |	x	| 0 1 0 | => r29 = 0+0+0+0+11*1+0+0+0+0 =>
+	; 		| 00 00 00 |		| 0 0 0 |
+	;
+	; => r29 = 1
+
+
+
+
+	;r29=60
+PPALfp2:LEA	(r30,50000)
+	LEA	(r2,IM1fp2)
+	or	r12,r0,2
+	or	r13,r0,2
+	LEA	(r3,MFfp2)
+	PUSH	(r3)
+	PUSH	(r13)
+	PUSH	(r12)
+	PUSH	(r2)
+	bsr	FILTRAPIXEL
+;	addu	r30,r30,16
+	stop
+
+	;org	240
+;Llama a FILTRAPIXEL, pasandole Imagen no nula y filtro que duplica
+;el valor del pixel:
+IM1fp2:	data	4,8
+		data	0x10101010,0x10101010,0x10101010,0x10101010
+		data	0x10301010,0x10101010,0x10101010,0x10101010
+MFfp2:	data	1,0,0,0,0,2,0,0,0,0
+	; 4 * 8							x	 MF
+	; | 10 10 10 10 10 10 10 10 |		k = 1
+	; | 10 10 10 10 10 10 10 10 |		| 0 0 0 |
+	; | 10 10 30 10 10 10 10 10 |		| 0 2 0 |	=>
+	; | 10 10 10 10 10 10 10 10 |		| 0 0 0 |
+	;
+	; 		| 10 10 10 |		| 0 0 0 |
+	; =>	| 10 30 10 |	x	| 0 2 0 | => r29 = 0+0+0+0+30*2+0+0+0+0 =>
+	; 		| 10 10 10 |		| 0 0 0 |
+	;
+	; => r29 = 60
+
+
+
+
+	;r29=05
+PPALfp3:LEA	(r30,50000)
+	LEA	(r2,IM1fp3)
+	or	r12,r0,2
+	or	r13,r0,1
+	LEA	(r3,MFfp3)
+	PUSH	(r3)
+	PUSH	(r13)
+	PUSH	(r12)
+	PUSH	(r2)
+	bsr	FILTRAPIXEL
+	addu	r30,r30,16
+	stop
+
+;org	320
+;Llama a FILTRAPIXEL, pasandole Imagen no nula y filtro que obtiene
+;la media de los elementos:
+IM1fp3:	data	4,8
+		data	0x00000000,0x00000000,0x00030201,0x00000000
+		data	0x00060504,0x00000000,0x00090807,0x00000000
+MFfp3:	data	9,1,1,1,1,1,1,1,1,1
+	;
+	; IM1fp3
+	;	 4 * 8							x	MF
+	; 	   00 01 02 03 04 05 06 07
+	; 00 | 00 00 00 00 00 00 00 00 |		k = 9
+	; 01 | 01 02 03 00 00 00 00 00 |		| 1 1 1 |
+	; 02 | 04 05 06 00 00 00 00 00 |		| 1 1 1 |	=>
+	; 03 | 07 08 09 00 00 00 00 00 |		| 1 1 1 |
+	;
+	; 		| 01 02 03 |		| 1 1 1 |=> r29 = 01*1+02*2+03*1+04*1+05*1+
+	; =>	| 04 05 06 |	x	| 1 1 1 | 			+06*1+07*1+08*1+09*1 =>
+	;		| 07 08 09 |		| 1 1 1 |
+	;
+	; => r29 = 5
+
+
+	;r29=00000000
+	PPALfp4:LEA	(r30,50000)
+	LEA	(r2,IM1fp4)
+	or	r12,r0,1
+	or	r13,r0,1
+	LEA	(r3,MFfp4)
+	PUSH	(r3)
+	PUSH	(r13)
+	PUSH	(r12)
+	PUSH	(r2)
+	bsr	FILTRAPIXEL
+	addu	r30,r30,16
+	stop
+
+;org	160
+;Llama a FILTRAPIXEL, pasandole Imagen de elemento unico y filtro unitario:
+IM1fp4:	data	4,8
+		data	0x00000000,0x00000000,0x00001100,0x00000000
+		data	0x00000000,0x00000000,0x00000000,0x00000000
+MFfp4:	data	1,0,0,0,0,-1,0,0,0,0
+		; 4 * 8						x	 MF
+	; | 00 00 00 00 00 00 00 00 |		k = 1
+	; | 00 11 00 00 00 00 00 00 |		| 0 0  0 |
+	; | 00 00 00 00 00 00 00 00 |		| 0 -1 0 |
+	; | 00 00 00 00 00 00 00 00 |		| 0 0  0 |
+	;
+	; 		| 00 00 00 |		| 0	0  0 |
+	; =>	| 00 11 00 |	x	| 0 -1 0 | => r29 = 0+0+0+0+11*(-1)+0+0+0+0 =>
+	; 		| 00 00 00 |		| 0 0  0 |
+	;
+	; => r29 = FFFFFFFF => r29 = 00000000
+
+
+
+
+
+PPALf1:	LEA	(r30,50000)
+	LEA	(r9,IM1f1)
+	LEA	(r3,IM2f1)
+	LEA	(r4,MFf1)
+	PUSH	(r4)
+	PUSH	(r3)
+	PUSH	(r9)
+	bsr	FILTRO
+	addu	r30,r30,12
+	stop
+
+;Llama a FILTRO, pasandole Imagen no nula y filtro maximizador:
+IM1f1:
+		data	4,8
+		data	0x11111111,0x11111111
+		data	0x11111111,0x11111111
+		data	0x11111111,0x11111111
+		data	0x11111111,0x11111111
+IM2f1:	res	40
+MFf1:	data	1,2,2,2,2,2,2,2,2,2
+		; 4 * 8									x	 MF	     =>			ImFiltrada
+	;		 00 01 02 03 04 05 06 07							 00 01 02 03 04 05 06 07
+	; 00 | 11 11 11 11 11 11 11 11 |		k = 1			00 | 11 11 11 11 11 11 11 11 |
+	; 01 | 11 11 11 11 11 11 11 11 |		| 2 2 2 |		01 | 11 FF FF FF FF FF FF 11 |
+	; 02 | 11 11 11 11 11 11 11 11 |		| 2 2 2 |	=>	02 | 11 FF FF FF FF FF FF 11 |
+	; 03 | 11 11 11 11 11 11 11 11 |		| 2 2 2 |		03 | 11 11 11 11 11 11 11 11 |
+
+
+
+;------>Pruebas de FILTROREC:
+		;org	640
+		;Imagen no nula y filtro que sustituye cada elemento por la media de los que le rodean.
+		;Numero de cambios admitidos: 2
+IM1fr1:	data	4,8,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111
+MFfr1:	data	1,2,2,2,2,2,2,2,2,2
+NCambiosfr1:	data	13
+NPasadasfr1:	data	0
+
+		;org	728
+		;Imagen no nula y filtro que sustituye cada elemento por la media de los que le rodean.
+		;Numero de cambios admitidos: 0
+		;SALIDA FORZOSA=>     r29=14
+IM1fr2:	data	4,8,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111,0x11111111
+MFfr2:	data	1,2,2,2,2,2,2,2,2,2
+NCambiosfr2:	data	0
+NPasadasfr2:	data	0
+
+
+PPALfr1:LEA	(r30,50000)
+	LEA	(r2,IM1fr1)
+	LEA	(r3,MFfr1)
+	LEA	(r4,NCambiosfr1)
+	ld	r4,r4,r0
+	LEA	(r5,NPasadasfr1)
+	ld	r5,r5,r0
+	PUSH	(r5)
+	PUSH	(r4)
+	PUSH	(r3)
+	PUSH	(r2)
+	bsr	FILTROREC
+	addu	r30,r30,16
+	stop
+
+
+
+
+
+PPALfr2:LEA	(r30,50000)
+	LEA	(r2,IM1fr2)
+	LEA	(r3,MFfr2)
+	LEA	(r4,NCambiosfr2)
+	ld	r4,r4,r0
+	LEA	(r5,NPasadasfr2)
+	ld	r5,r5,r0
+	PUSH	(r5)
+	PUSH	(r4)
+	PUSH	(r3)
+	PUSH	(r2)
+	bsr	FILTROREC
+	addu	r30,r30,16
+	stop
+
+
+;
+; Pruebas de compañeros <------------------------------------------------------
+;
+
+
+
+; -----------------------------------------------------------------------------
+; <-- codigo_prueba.ens
+; -----------------------------------------------------------------------------
